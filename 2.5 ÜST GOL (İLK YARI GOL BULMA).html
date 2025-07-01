@@ -1,0 +1,123 @@
+<!DOCTYPE html><html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>2.5 Üst Oran Analizi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f5f5f5;
+      max-width: 480px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      font-size: 1rem;
+      margin-top: 5px;
+    }
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      background-color: #2a8f2a;
+      color: white;
+      border: none;
+      font-size: 1.1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 0 8px #ccc;
+      font-size: 1.2rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>2.5 Üst Gol Tahmini</h1>
+  <label for="dk">Dakika (1-45):</label>
+  <input type="number" id="dk" min="1" max="90" placeholder="Dakika girin"><label for="oran">Güncel 2.5 Üst Oranı:</label> <input type="number" id="oran" step="0.01" min="1" placeholder="Oranı girin">
+
+<label for="gol">Gol Sayısı:</label> <input type="number" id="gol" min="0" max="10" placeholder="Toplam gol sayısı">
+
+<button onclick="tahmin25Yap()">Tahmin Yap</button>
+
+  <div id="sonuc" class="result"></div><script>
+  const oran25 = {};
+  let oran = 1.30;
+  for (let dk = 1; dk <= 45; dk++) {
+    oran25[dk] = parseFloat(oran.toFixed(3));
+    oran += 0.0125;
+  }
+
+  function ilkYaridaGolVarMi(oran25input, dk, gol) {
+    if (dk > 45) return null;
+    if (gol === 0 && oran25input > 2.30) return "❌ İlk yarıda gol olmamış olabilir.";
+    if (gol >= 1 && oran25input < 2.00) return "✅ İlk yarıda büyük ihtimalle gol olmuştur.";
+    if (gol >= 2) return "✅ İlk yarıda kesinlikle gol olmuştur.";
+    return null;
+  }
+
+  function ilkYarida1GolTahmini(girilenOran, dk) {
+    const beklenenOran = oran25[dk] || 1.85;
+    const fark = girilenOran - beklenenOran;
+    if (fark >= 0.30) return { tahmin: "❌ Büyük ihtimalle 0 gol", yuzde: 15 };
+    if (fark >= 0.10) return { tahmin: "⚠️ Muhtemelen 0 veya 1 gol", yuzde: 40 };
+    if (fark >= -0.05) return { tahmin: "🔶 Büyük olasılıkla 1 gol", yuzde: 65 };
+    if (fark < -0.05) return { tahmin: "✅ Yüksek ihtimalle 1 veya daha fazla gol", yuzde: 85 };
+    return { tahmin: "", yuzde: 50 };
+  }
+
+  function tahmin25Yap() {
+    const dk = parseInt(document.getElementById("dk").value);
+    const oranInput = parseFloat(document.getElementById("oran").value);
+    const gol = parseInt(document.getElementById("gol").value);
+    const sonuc = document.getElementById("sonuc");
+    if (!dk || !oranInput || gol === null || dk < 1 || dk > 90) {
+      sonuc.innerHTML = "Lütfen geçerli girişler yapın.";
+      return;
+    }
+
+    const maxOran = oran25[dk] || 1.85; // 45 sonrası 1.85'e sabitlenir
+    let fark = oranInput - maxOran;
+    let yuzde = 100;
+
+    if (fark > 0) yuzde = 100 - fark * 100;
+    if (gol === 1) yuzde *= 0.85;
+    if (gol >= 2) yuzde *= 0.7;
+    if (yuzde > 100) yuzde = 100;
+    if (yuzde < 0) yuzde = 0;
+
+    yuzde = Math.round(yuzde);
+    let metin = `Tahmini gol ihtimali: <strong>%${yuzde}</strong><br>`;
+
+    if (yuzde <= 40) metin += "⚠️ Gol gelme ihtimali düşük";
+    else if (yuzde <= 70) metin += "🔶 Gol gelme ihtimali orta";
+    else metin += "✅ Gol gelme ihtimali yüksek";
+
+    const yorum = ilkYaridaGolVarMi(oranInput, dk, gol);
+    if (yorum) metin += `<br><br><em>${yorum}</em>`;
+
+    const tahmin = ilkYarida1GolTahmini(oranInput, dk);
+    if (tahmin.tahmin) {
+      metin += `<br><br><strong>🧠 İlk yarıda 1 gol olma ihtimali: %${tahmin.yuzde}</strong><br>${tahmin.tahmin}`;
+    }
+
+    sonuc.innerHTML = metin;
+  }
+</script></body>
+</html>
