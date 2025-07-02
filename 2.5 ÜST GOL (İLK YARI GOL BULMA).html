@@ -1,123 +1,325 @@
-<!DOCTYPE html><html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <title>2.5 Üst Oran Analizi</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f5f5f5;
-      max-width: 480px;
-      margin: auto;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 15px;
-    }
-    input {
-      width: 100%;
-      padding: 8px;
-      font-size: 1rem;
-      margin-top: 5px;
-    }
-    button {
-      margin-top: 20px;
-      width: 100%;
-      padding: 10px;
-      background-color: #2a8f2a;
-      color: white;
-      border: none;
-      font-size: 1.1rem;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .result {
-      margin-top: 20px;
-      padding: 15px;
-      background: #fff;
-      border-radius: 6px;
-      box-shadow: 0 0 8px #ccc;
-      font-size: 1.2rem;
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-  <h1>2.5 Üst Gol Tahmini</h1>
-  <label for="dk">Dakika (1-45):</label>
-  <input type="number" id="dk" min="1" max="90" placeholder="Dakika girin"><label for="oran">Güncel 2.5 Üst Oranı:</label> <input type="number" id="oran" step="0.01" min="1" placeholder="Oranı girin">
 
-<label for="gol">Gol Sayısı:</label> <input type="number" id="gol" min="0" max="10" placeholder="Toplam gol sayısı">
-
-<button onclick="tahmin25Yap()">Tahmin Yap</button>
-
-  <div id="sonuc" class="result"></div><script>
-  const oran25 = {};
-  let oran = 1.30;
-  for (let dk = 1; dk <= 45; dk++) {
-    oran25[dk] = parseFloat(oran.toFixed(3));
-    oran += 0.0125;
-  }
-
-  function ilkYaridaGolVarMi(oran25input, dk, gol) {
-    if (dk > 45) return null;
-    if (gol === 0 && oran25input > 2.30) return "❌ İlk yarıda gol olmamış olabilir.";
-    if (gol >= 1 && oran25input < 2.00) return "✅ İlk yarıda büyük ihtimalle gol olmuştur.";
-    if (gol >= 2) return "✅ İlk yarıda kesinlikle gol olmuştur.";
-    return null;
-  }
-
-  function ilkYarida1GolTahmini(girilenOran, dk) {
-    const beklenenOran = oran25[dk] || 1.85;
-    const fark = girilenOran - beklenenOran;
-    if (fark >= 0.30) return { tahmin: "❌ Büyük ihtimalle 0 gol", yuzde: 15 };
-    if (fark >= 0.10) return { tahmin: "⚠️ Muhtemelen 0 veya 1 gol", yuzde: 40 };
-    if (fark >= -0.05) return { tahmin: "🔶 Büyük olasılıkla 1 gol", yuzde: 65 };
-    if (fark < -0.05) return { tahmin: "✅ Yüksek ihtimalle 1 veya daha fazla gol", yuzde: 85 };
-    return { tahmin: "", yuzde: 50 };
-  }
-
-  function tahmin25Yap() {
-    const dk = parseInt(document.getElementById("dk").value);
-    const oranInput = parseFloat(document.getElementById("oran").value);
-    const gol = parseInt(document.getElementById("gol").value);
-    const sonuc = document.getElementById("sonuc");
-    if (!dk || !oranInput || gol === null || dk < 1 || dk > 90) {
-      sonuc.innerHTML = "Lütfen geçerli girişler yapın.";
-      return;
-    }
-
-    const maxOran = oran25[dk] || 1.85; // 45 sonrası 1.85'e sabitlenir
-    let fark = oranInput - maxOran;
-    let yuzde = 100;
-
-    if (fark > 0) yuzde = 100 - fark * 100;
-    if (gol === 1) yuzde *= 0.85;
-    if (gol >= 2) yuzde *= 0.7;
-    if (yuzde > 100) yuzde = 100;
-    if (yuzde < 0) yuzde = 0;
-
-    yuzde = Math.round(yuzde);
-    let metin = `Tahmini gol ihtimali: <strong>%${yuzde}</strong><br>`;
-
-    if (yuzde <= 40) metin += "⚠️ Gol gelme ihtimali düşük";
-    else if (yuzde <= 70) metin += "🔶 Gol gelme ihtimali orta";
-    else metin += "✅ Gol gelme ihtimali yüksek";
-
-    const yorum = ilkYaridaGolVarMi(oranInput, dk, gol);
-    if (yorum) metin += `<br><br><em>${yorum}</em>`;
-
-    const tahmin = ilkYarida1GolTahmini(oranInput, dk);
-    if (tahmin.tahmin) {
-      metin += `<br><br><strong>🧠 İlk yarıda 1 gol olma ihtimali: %${tahmin.yuzde}</strong><br>${tahmin.tahmin}`;
-    }
-
-    sonuc.innerHTML = metin;
-  }
-</script></body>
-</html>
+1	<!DOCTYPE html> 
+2	<html lang="tr"> 
+3	<head> 
+4	<meta charset="UTF-8" /> 
+5	<meta name="viewport" content="width=device-width, initial-scale=1" /> 
+6	<title>Canlı Oran Gol Sinyali</title> 
+7	<style> 
+8	  body { 
+9	    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+10	    background: #f9f9f9; 
+11	    margin: 0; padding: 20px; 
+12	    color: #222; 
+13	  } 
+14	  h1 { 
+15	    text-align: center; 
+16	    color: #003366; 
+17	    margin-bottom: 5px; 
+18	  } 
+19	  .payment-box { 
+20	    max-width: 600px; 
+21	    margin: 0 auto 30px auto; 
+22	    background: #fff; 
+23	    border-radius: 8px; 
+24	    padding: 20px 25px; 
+25	    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1); 
+26	    font-size: 1.1rem; 
+27	    color: #222; 
+28	    line-height: 1.4; 
+29	  } 
+30	  .payment-box div { 
+31	    margin: 8px 0; 
+32	  } 
+33	  .payment-box strong { 
+34	    color: #003366; 
+35	  } 
+36	  .payment-box .iban-warning { 
+37	    margin-top: 15px; 
+38	    font-style: italic; 
+39	    font-size: 1rem; 
+40	    color: #b22222; /* kırmızı */ 
+41	  } 
+42	  .price { 
+43	    color: #008000; 
+44	    font-weight: bold; 
+45	    font-size: 1.2rem; 
+46	    margin-top: 10px; 
+47	  } 
+48	  .warning-msg { 
+49	    max-width: 600px; 
+50	    margin: 10px auto 30px auto; 
+51	    padding: 12px; 
+52	    border-radius: 6px; 
+53	    background-color: #ffdddd; 
+54	    color: #a10000; 
+55	    font-weight: bold; 
+56	    text-align: center; 
+57	    display: none; 
+58	  } 
+59	  .success-msg { 
+60	    max-width: 600px; 
+61	    margin: 10px auto 30px auto; 
+62	    padding: 12px; 
+63	    border-radius: 6px; 
+64	    background-color: #ddffdd; 
+65	    color: #0a660a; 
+66	    font-weight: bold; 
+67	    text-align: center; 
+68	    display: none; 
+69	  } 
+70	  .container { 
+71	    max-width: 640px; 
+72	    margin: 0 auto 50px auto; 
+73	    background: white; 
+74	    border-radius: 8px; 
+75	    box-shadow: 0 2px 12px rgb(0 0 0 / 0.12); 
+76	    padding: 20px 25px; 
+77	  } 
+78	  .signal-box { 
+79	    border: 2px solid #0077cc; 
+80	    border-radius: 6px; 
+81	    padding: 15px 20px; 
+82	    margin-bottom: 30px; 
+83	  } 
+84	  .signal-box h2 { 
+85	    margin: 0 0 15px 0; 
+86	    color: #005599; 
+87	  } 
+88	  label { 
+89	    display: block; 
+90	    font-weight: 600; 
+91	    margin-bottom: 6px; 
+92	    color: #222; 
+93	  } 
+94	  input[type="number"], input[type="text"] { 
+95	    width: 100%; 
+96	    padding: 8px 10px; 
+97	    margin-bottom: 15px; 
+98	    border-radius: 5px; 
+99	    border: 1.8px solid #ccc; 
+100	    font-size: 1rem; 
+101	    transition: border-color 0.25s ease; 
+102	  } 
+103	  input[type="number"]:focus, input[type="text"]:focus { 
+104	    outline: none; 
+105	    border-color: #0077cc; 
+106	    background: #f0f8ff; 
+107	  } 
+108	  button.calc-btn { 
+109	    background-color: #0077cc; 
+110	    border: none; 
+111	    color: white; 
+112	    padding: 10px 18px; 
+113	    font-size: 1rem; 
+114	    border-radius: 6px; 
+115	    cursor: pointer; 
+116	    transition: background-color 0.3s ease; 
+117	  } 
+118	  button.calc-btn:hover { 
+119	    background-color: #005599; 
+120	  } 
+121	  .result { 
+122	    margin-top: 12px; 
+123	    font-weight: 700; 
+124	    font-size: 1.1rem; 
+125	    color: #004080; 
+126	    min-height: 30px; 
+127	  } 
+128	  @media (max-width: 480px) { 
+129	    body { 
+130	      padding: 15px 10px; 
+131	    } 
+132	    .container { 
+133	      padding: 15px 15px; 
+134	    } 
+135	  } 
+136	</style> 
+137	</head> 
+138	<body> 
+139	 
+140	<h1>Canlı Oran Gol Sinyali</h1> 
+141	 
+142	<div class="payment-box"> 
+143	  <div><strong>Ad Soyad:</strong> İsmail Şişman</div> 
+144	  <div><strong>IBAN:</strong> TR82 0006 2000 1660 0006 8718 35</div> 
+145	  <div class="price"><strong>Ücret:</strong> Aylık 200 TL</div> 
+146	  <div class="iban-warning">Ödeme esnasında açıklama kısmını boş bırakın.</div> 
+147	</div> 
+148	 
+149	<div id="warningMsg" class="warning-msg">⚠️ Ödeme yapılmadan karışık sinyal verilir.</div> 
+150	<div id="successMsg" class="success-msg">✅ Ödeme alındı. İsmailsisman34@gmail.com adresine bilgilendirme e-postası gönderildi.</div> 
+151	 
+152	<div style="text-align:center; margin-bottom: 40px;"> 
+153	  <button id="payBtn" class="calc-btn">Ödeme Yapıldı (Simüle Et)</button> 
+154	</div> 
+155	 
+156	<div class="container"> 
+157	 
+158	  <!-- Sinyal kutuları --> 
+159	  <div class="signal-box" id="signal1"> 
+160	    <h2>İlk Yarı 0.5 Üst</h2> 
+161	    <label for="iy05Oran">Oran</label> 
+162	    <input type="number" step="0.01" id="iy05Oran" placeholder="Örn: 1.30" min="1" /> 
+163	    <label for="iy05Dakika">Dakika</label> 
+164	    <input type="number" id="iy05Dakika" placeholder="Örn: 20" min="1" max="45" /> 
+165	    <label for="iy05Skor">İlk Yarı Skor (Örn: 1-0)</label> 
+166	    <input type="text" id="iy05Skor" placeholder="Ev Sahibi - Deplasman (örn: 1-0)" pattern="^\d+-\d+$" /> 
+167	    <button class="calc-btn" onclick="calculateSignal('iy05')">Sinyali Göster</button> 
+168	    <div class="result" id="iy05Sonuc"></div> 
+169	  </div> 
+170	 
+171	  <div class="signal-box" id="signal2"> 
+172	    <h2>İlk Yarı 1.5 Üst</h2> 
+173	    <label for="iy15Oran">Oran</label> 
+174	    <input type="number" step="0.01" id="iy15Oran" placeholder="Örn: 2.50" min="1" /> 
+175	    <label for="iy15Dakika">Dakika</label> 
+176	    <input type="number" id="iy15Dakika" placeholder="Örn: 30" min="1" max="45" /> 
+177	    <label for="iy15Skor">İlk Yarı Skor (Örn: 1-0)</label> 
+178	    <input type="text" id="iy15Skor" placeholder="Ev Sahibi - Deplasman (örn: 1-0)" pattern="^\d+-\d+$" /> 
+179	    <button class="calc-btn" onclick="calculateSignal('iy15')">Sinyali Göster</button> 
+180	    <div class="result" id="iy15Sonuc"></div> 
+181	  </div> 
+182	 
+183	  <div class="signal-box" id="signal3"> 
+184	    <h2>Toplam 1.5 Üst</h2> 
+185	    <label for="top15Oran">Oran</label> 
+186	    <input type="number" step="0.01" id="top15Oran" placeholder="Örn: 1.85" min="1" /> 
+187	    <label for="top15Dakika">Dakika</label> 
+188	    <input type="number" id="top15Dakika" placeholder="Örn: 60" min="1" max="90" /> 
+189	    <label for="top15Skor">Toplam Skor (Örn: 1-1)</label> 
+190	    <input type="text" id="top15Skor" placeholder="Ev Sahibi - Deplasman (örn: 1-1)" pattern="^\d+-\d+$" /> 
+191	    <button class="calc-btn" onclick="calculateSignal('top15')">Sinyali Göster</button> 
+192	    <div class="result" id="top15Sonuc"></div> 
+193	  </div> 
+194	 
+195	  <div class="signal-box" id="signal4"> 
+196	    <h2>Toplam 2.5 Üst</h2> 
+197	    <label for="top25Oran">Oran</label> 
+198	    <input type="number" step="0.01" id="top25Oran" placeholder="Örn: 2.10" min="1" /> 
+199	    <label for="top25Dakika">Dakika</label> 
+200	    <input type="number" id="top25Dakika" placeholder="Örn: 70" min="1" max="90" /> 
+201	    <label for="top25Skor">Toplam Skor (Örn: 1-2)</label> 
+202	    <input type="text" id="top25Skor" placeholder="Ev Sahibi - Deplasman (örn: 1-2)" pattern="^\d+-\d+$" /> 
+203	    <button class="calc-btn" onclick="calculateSignal('top25')">Sinyali Göster</button> 
+204	    <div class="result" id="top25Sonuc"></div> 
+205	  </div> 
+206	 
+207	  <div class="signal-box" id="signal5"> 
+208	    <h2>Toplam 3.5 Üst</h2> 
+209	    <label for="top35Oran">Oran</label> 
+210	    <input type="number" step="0.01" id="top35Oran" placeholder="Örn: 3.50" min="1" /> 
+211	    <label for="top35Dakika">Dakika</label> 
+212	    <input type="number" id="top35Dakika" placeholder="Örn: 75" min="1" max="90" /> 
+213	    <label for="top35Skor">Toplam Skor (Örn: 2-2)</label> 
+214	    <input type="text" id="top35Skor" placeholder="Ev Sahibi - Deplasman (örn: 2-2)" pattern="^\d+-\d+$" /> 
+215	    <button class="calc-btn" onclick="calculateSignal('top35')">Sinyali Göster</button> 
+216	    <div class="result" id="top35Sonuc"></div> 
+217	  </div> 
+218	 
+219	  <div class="signal-box" id="signal6"> 
+220	    <h2>Toplam 4.5 Üst</h2> 
+221	    <label for="top45Oran">Oran</label> 
+222	    <input type="number" step="0.01" id="top45Oran" placeholder="Örn: 5.00" min="1" /> 
+223	    <label for="top45Dakika">Dakika</label> 
+224	    <input type="number" id="top45Dakika" placeholder="Örn: 80" min="1" max="90" /> 
+225	    <label for="top45Skor">Toplam Skor (Örn: 3-1)</label> 
+226	    <input type="text" id="top45Skor" placeholder="Ev Sahibi - Deplasman (örn: 3-1)" pattern="^\d+-\d+$" /> 
+227	    <button class="calc-btn" onclick="calculateSignal('top45')">Sinyali Göster</button> 
+228	    <div class="result" id="top45Sonuc"></div> 
+229	  </div> 
+230	 
+231	</div> 
+232	 
+233	<script> 
+234	  // Ödeme durumu simülasyonu 
+235	  let odemeYapildi = false; 
+236	 
+237	  const warningMsg = document.getElementById("warningMsg"); 
+238	  const successMsg = document.getElementById("successMsg"); 
+239	  const payBtn = document.getElementById("payBtn"); 
+240	 
+241	  function updatePaymentStatus() { 
+242	    if(odemeYapildi) { 
+243	      warningMsg.style.display = "none"; 
+244	      successMsg.style.display = "block"; 
+245	    } else { 
+246	      warningMsg.style.display = "block"; 
+247	      successMsg.style.display = "none"; 
+248	    } 
+249	  } 
+250	  updatePaymentStatus(); 
+251	 
+252	  payBtn.addEventListener("click", () => { 
+253	    odemeYapildi = true; 
+254	    updatePaymentStatus(); 
+255	    alert("Ödeme yapıldı simülasyonu aktifleştirildi."); 
+256	  }); 
+257	 
+258	  function calculateSignal(prefix) { 
+259	    if(!odemeYapildi){ 
+260	      alert("Lütfen önce ödeme yapınız. Ödeme yapılmadan sinyal doğruluğu garanti edilmez."); 
+261	      return; 
+262	    } 
+263	     
+264	    const oranInput = document.getElementById(prefix + "Oran"); 
+265	    const dakikaInput = document.getElementById(prefix + "Dakika"); 
+266	    const skorInput = document.getElementById(prefix + "Skor"); 
+267	    const sonucDiv = document.getElementById(prefix + "Sonuc"); 
+268	 
+269	    const oran = parseFloat(oranInput.value); 
+270	    const dakika = parseInt(dakikaInput.value); 
+271	    const skorStr = skorInput.value.trim(); 
+272	 
+273	    if(isNaN(oran) || oran < 1){ 
+274	      sonucDiv.textContent = "Lütfen geçerli bir oran giriniz (1 ve üzeri)."; 
+275	      sonucDiv.style.color = "red"; 
+276	      return; 
+277	    } 
+278	    if(isNaN(dakika) || dakika < 1){ 
+279	      sonucDiv.textContent = "Lütfen geçerli bir dakika giriniz."; 
+280	      sonucDiv.style.color = "red"; 
+281	      return; 
+282	    } 
+283	    const skorRegex = /^\d+-\d+$/; 
+284	    if(!skorRegex.test(skorStr)){ 
+285	      sonucDiv.textContent = "Lütfen skor bilgisini '0-0' formatında giriniz."; 
+286	      sonucDiv.style.color = "red"; 
+287	      return; 
+288	    } 
+289	    const [ev, depl] = skorStr.split("-").map(n => parseInt(n)); 
+290	 
+291	    // Basit sinyal mantığı: 
+292	    // Oran düşükse (örneğin <1.5) güçlü sinyal, 
+293	    // Oran 1.5-2 arası orta sinyal, 
+294	    // Oran >2 ise zayıf sinyal. 
+295	    // Dakika ve skor ile biraz koşul koyabiliriz: 
+296	    let sinyal = ""; 
+297	    let renk = "#004080"; 
+298	 
+299	    if(oran < 1.5){ 
+300	      sinyal = "Güçlü Gol Sinyali"; 
+301	      renk = "green"; 
+302	    } else if(oran < 2.0){ 
+303	      sinyal = "Orta Gol Sinyali"; 
+304	      renk = "orange"; 
+305	    } else { 
+306	      sinyal = "Zayıf Gol Sinyali"; 
+307	      renk = "red"; 
+308	    } 
+309	 
+310	    // Örnek skor kontrolü: skor yüksekse sinyal gücü artabilir 
+311	    const toplamGol = ev + depl; 
+312	    if(toplamGol >= 2 && oran < 2.0){ 
+313	      sinyal += " (Maçta gol yoğunluğu yüksek)"; 
+314	      renk = "darkgreen"; 
+315	    } 
+316	 
+317	    sonucDiv.textContent = sinyal; 
+318	    sonucDiv.style.color = renk; 
+319	  } 
+320	</script> 
+321	 
+322	</body> 
+323	</html> 
+324	 
